@@ -1,87 +1,66 @@
 import React, {useState, useEffect} from 'react';
 import {TextField, Button, Typography, Paper} from '@material-ui/core';
-import FileBaes from 'react-file-base64';
-import {useDispatch, useSelector} from 'react-redux';
 import FileBase from 'react-file-base64';
+import {useDispatch, useSelector} from 'react-redux';
+
 
 import useStyles from './styles';
-import {createPost} from '../../actions/posts';
+import {createPost, updatePost} from '../../actions/posts';
 
 
-const Form =() => {
-  const [postData, setPostData] = useState({
-    creator: '', Item_name:'', message:'', price:'', photo:''
-  })
-  const classes =useStyles();
-  const dispatch =useDispatch();
+const Form =({ currentId, setCurrentId }) => {
+  const [postData, setPostData] = useState({item: '', tags: '' ,price: '', selectedFile: ''});
+  const post = useSelector((state)=> (currentId ? state.posts.find((message) => message._id === currentId) : null));
+  const classes = useStyles();
+  const dispatch = useDispatch();
+  const user = JSON.parse(localStorage.getItem('profile'));
+  useEffect(() => {
+    if (post) setPostData(post);
+  }, [post]);
+
+  const clear = () => {
+    setCurrentId(0);
+    setPostData({item: '', tags: '', price: '', selectedFile: '' });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    dispatch(createPost(postData));
-    clear();
-  }
+    if(currentId === 0) {
+      dispatch(createPost( { ...postData, name: user?.result ?.name}));
+      clear();
+    } else{
+        dispatch(updatePost(currentId,{ ...postData, name: user?.result ?.name}));
+        clear();
+    }
+  };
+if(!user?.result?.name){
+  return(
+    <Paper className={classes.paper}>
+      <Typography variant="h6" align="center">
+        Sign In first.
+      </Typography>
+    </Paper>
 
-  const clear = () =>{
-
-  }
+  );
+}
 
   return(
+
     <Paper className ={classes.paper}>
       <form autoComplete="off" noValidate className={`${classes.root} ${classes.form}`} onSubmit={handleSubmit}>
-      <Typography variant="h6">Posting Items</Typography>
-      <TextField
-      name="creator"
-      variant="outlined"
-      label="Creator"
-      fullWidth
-      value={postData.creator}
-      onChange={(e) => setPostData({...postData, creator: e.target.value})}
-      />
-
-      <TextField
-      name="Item_name"
-      variant="outlined"
-      label="Item_name"
-      fullWidth
-      value={postData.Item_name}
-      onChange={(e) => setPostData({...postData, Item_name: e.target.value})}
-      />
-
-      <TextField
-      name="message"
-      variant="outlined"
-      label="message"
-      fullWidth
-      value={postData.message}
-      onChange={(e) => setPostData({...postData, message: e.target.value})}
-      />
-
-      <TextField
-      name="price"
-      variant="outlined"
-      label="price"
-      fullWidth
-      value={postData.price}
-      onChange={(e) => setPostData({...postData, price: e.target.value})}
-      />
-
-      <TextField
-      name="photo"
-      variant="outlined"
-      label="photo"
-      fullWidth
-      value={postData.photo}
-      onChange={(e) => setPostData({...postData, photo: e.target.value})}
-      />
+      <Typography variant="h6">{currentId ? 'Editing' : 'Posting Items'}</Typography>
+      <TextField name="Item_name" variant="outlined" label="Item_name" fullWidth value={postData.item} onChange={(e) => setPostData({...postData, item: e.target.value})} />
+      <TextField name="price" variant="outlined" label="price" fullWidth value={postData.price} onChange={(e) => setPostData({...postData, price: e.target.value})} />
+      <TextField name="tags" variant="outlined" label="Tags" fullWidth value={postData.tags} onChange={(e) => setPostData({...postData, tags: e.target.value.split(',')})} />
       <div className={classes.fileInput}>
-        <FileBaes
+        <FileBase
           type="file"
-          multiple={true}
+          multiple={false}
           onDone={({base64}) =>setPostData({...postData, selectedFile: base64})} />
       </div>
         <Button className={classes.buttonSubmit} variant ="container" color="primary" size="large" type="submit" fullWidth>Submit</Button>
-         <Button variant ="contained" color="secondary" size="small" onClick={clear} fullWidth>Clear</Button>
+        <Button variant ="contained" color="secondary" size="small" onClick={clear} fullWidth>Clear</Button>
       </form>
     </Paper>
   );
